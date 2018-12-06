@@ -23,9 +23,3 @@ dataDF.sort("count").explain()
 
 dataDF.describe()
 
-
-
-
-spark.conf.set("spark.sql.shuffle.partitions", "5")
-Narrow Dependencies 
-Wide Dependencies
