@@ -1,9 +1,13 @@
 spark.master=yarn
+spark.master=local[2]
 spark.eventLog.enabled=false
 ### If the eventLog is true then 
 ### spark.eventLog.dir=hdfs://namenode:8021/directory
+### spark.eventLog.dir=/Users/deepak/tmp/grammy/
 
 spark.serializer=org.apache.spark.serializer.KyroSerializer
 spark.driver.memory=15g
+spark.executor.memory=10g
+#spark.executor.extraJavaOptions=-XX:+PrintGCDetails -Dkey=value -Dnumbers="one,two,three"
 spark.app.name="xxxxxxx"
 spark.sql.warehouse.dir=/tmp/spark-warehouse
