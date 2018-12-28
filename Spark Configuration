@@ -1,0 +1,9 @@
+spark.master=yarn
+spark.eventLog.enabled=false
+### If the eventLog is true then 
+### spark.eventLog.dir=hdfs://namenode:8021/directory
+
+spark.serializer=org.apache.spark.serializer.KyroSerializer
+spark.driver.memory=15g
+spark.app.name="xxxxxxx"
+spark.sql.warehouse.dir=/tmp/spark-warehouse
