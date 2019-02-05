@@ -9,7 +9,6 @@ import org.apache.spark.sql.functions._
 import org.joda.time.format.DateTimeFormat
 
 /* Various Date Formats  */
-object DateFormats {
 
 val YYYYMMDD = "yyyymmdd"
 val DDMMYYYY = "ddmmyyyy"
@@ -21,7 +20,7 @@ val MMYY = "mmyy"
 val YYMM = "yymm"
 val YYYY_MM_DD = "yyyy_mm_dd"
 val DD_MM_YYYY = "dd_mm_yy"
-}
+
 
 /* General Date Transformation  */
 object DateTransforamtion {
@@ -146,9 +145,171 @@ def currentTimeZone (timestampFormat: String ) : Column = {
       }
   }
   
+/*
+* Check whether the a Given String is Date or Not.
+* Checking For following formats
+* YYYYMMDD, ddmmyyyy, yymmdd, ddmmyy, MMYYYY, YYYYMM, MMYY, YYMM
+* @Column ---> Input Date/ Given Date
+*/
+
+  def stringIsDateOrNot ( stringDate: Column, inputFormat: String , outputFormat: String ) : Column = {
+  
+    inputFormat match {
+      
+      case YYYYMMDD => 
+            val actualDay = stringDate.substr(7, 2)
+            val actualMonth = stringDate.substr(5, 2)
+            val actualYear = stringDate.substr(0, 4)
+         getValidDayMonthYear (actualDay, actualMonth, actualYear )
+      
+      case DDMMYYYY => 
+            val actualDay = stringDate.substr(0, 2)
+            val actualMonth = stringDate.substr(3, 2)
+            val actualYear = stringDate.substr(5, 4)
+         getValidDayMonthYear (actualDay, actualMonth, actualYear )
+      
+      case DDMMYY => 
+            val actualDay = stringDate.substr(0, 2)
+            val actualMonth = stringDate.substr(3, 2)
+            val actualYear = stringDate.substr(5, 2)
+         getValidDayMonthYear (actualDay, actualMonth, actualYear )
+      
+       case YYMMDD => 
+            val actualDay = stringDate.substr(5, 2)
+            val actualMonth = stringDate.substr(3, 2)
+            val actualYear = stringDate.substr(0, 2)
+         getValidDayMonthYear (actualDay, actualMonth, actualYear )
+      
+         case YYYYMM => 
+            val actualMonth = stringDate.substr(5, 2)
+            val actualYear = stringDate.substr(0, 4)
+         getValidDayMonthYear ( actualMonth, actualYear )
+      
+         case MMYYYY => 
+            val actualMonth = stringDate.substr(0, 2)
+            val actualYear = stringDate.substr(3, 4)
+         getValidDayMonthYear ( actualMonth, actualYear )
+      
+         case MMYY => 
+            val actualMonth = stringDate.substr(0, 2)
+            val actualYear = stringDate.substr(3, 2)
+         getValidDayMonthYear ( actualMonth, actualYear )
+      
+         case YYMM => 
+            val actualMonth = stringDate.substr(3, 2)
+            val actualYear = stringDate.substr(0, 2)
+         getValidDayMonthYear ( actualMonth, actualYear )
+      
+      case _ => null  
+    }
+  }
+  
+  /* 
+  *Get The last day of month from a Given Date
+  *@param column  -------> Input Date
+  *@param inputFormat----> Actual Date Format
+  *@param outputFormat ---> Required date format
+  *@return ---------------> last day of month
+  *
+  */
+  
+  def getLastDayOfMonth (column : Column, inputFormat: String = YYYYMMDD, outputFormat : String =  DDMMYYY) : Column {
+      val stringToDate = to_date(unix_timestamp(column, inputFormat).cast("timestamp"), outputFormat)
+      val lastDayOfMonth = dayofmonth (last_day(stringToDate))
+    
+      lastDayOfMonth
+  }
+    
+   /* 
+  * Method to validate date, month and convert the input date to required date format
+  *@param yyyy  -------> Year split of the input Date
+  *@param mm ----> Month split of the input Date
+  *@param dd ---> Day split of the input Date
+  *@return ---------------> return a valid date
+  */
+  def getValidDayMonthYear (yyyy: Column, mm : Column, dd: Column = lit ("31")) : Column {
+    val getYearUDF = udf ((x: Int, y: Int) => x + y )
+    
+    var updatedYear = when(length (yyyy) === 2, when (yyyy >= 60, getYearUDF(yyyy, lit(1900) ) )
+                           .otherwise(getYearUDF(yyyy, lit(2000) ) ) )
+                           .otherwise(yyyy)
+    
+      when(updatedYear < 1960 || (mm < 0 || mm >= 13 ), lit( "0" ) ).otherwise( {
+       val max_day = DateTransforamtion.getLastDayOfMonth( concat ( updatedYear, mm, lit( "01" ) ) )
+        when ( dd < max_day, concat (updatedYear, mm, dd) ) .otherwise( concat ( updatedYear, mm, max_day ) )
+      })  
+  }
+  
+    /* 
+  *Get The last Date of month from a Given Date
+  *@param column  -------> Input Date
+  *@param inputFormat----> Actual Date Format
+  *@param outputFormat ---> Required date format
+  *@return ---------------> last day of month
+  *
+  */
+  
+  def getLastDateOfMonth (column: Column, inputFormat: String = YYYYMMDD, outputFormat: String = YYYYMMDD) : Column = {
+  
+    val concat_dd = concat (column, lit( "01" ) )
+    val stingToDate = to_date(unix_timestamp(concat_dd, YYYYMMDD).cast( "timestamp") )
+    val endOfMonth = last_day (stringToDate)
+    
+    endOfMonth
+  }
+
+      /* 
+  * Convert given date to required Date format
+  *@param column  -------> Input Date
+  *@param inputFormat----> Actual Date Format
+  *@param outputFormat ---> Required date format
+  *@return ---------------> convert date into required date format
+  */
+
+  def convertDateFormat (column: Column, inputFormat: String, outputFormat: String) : Column = {
+    try {
+            from_unixtime(unix_timestamp( column, inputFormat), outputFormat)
+        } 
+    catch {
+            case e: Exception => lit( "0" )
+            }
+  }
+  
+  
+  val unixTimestamp = functions.udf((dateString: String, format: String) => {
+    zonedDateTime.parse(dateString, DateFormatter.ofPattern(format) ) .toEpochSeconds
+  })
+ 
+}
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+ 
 
 
 
 
 
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
