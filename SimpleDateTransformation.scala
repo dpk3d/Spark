@@ -154,7 +154,7 @@ def currentTimeZone (timestampFormat: String ) : Column = {
 
   def stringIsDateOrNot ( stringDate: Column, inputFormat: String , outputFormat: String ) : Column = {
     
-    /* Handling diffrent set of delimited date formate 
+    /* Handling diffrent set of delimited date format or Normalizing Date String 
     *YYYY.MM.DD, YYYY-MM-DD, YYYY_MM_DD ..etc..    
     */
     Column = Column.replace(".|-|//|:|::|_", "") 
@@ -286,35 +286,4 @@ def currentTimeZone (timestampFormat: String ) : Column = {
   })
  
 }
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
- 
-
-
-
-
-
-
-  
-  
-  
-  
-  
-  
-  
-  
   
