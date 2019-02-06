@@ -1,3 +1,5 @@
+package com.deepak.common.utils
+
 import java.time.zonedDateTime
 import java.time.format.DateTimeFormatter
 
@@ -6,24 +8,11 @@ import scala.util.try
 import org.apache.spark.sql.{functions, Column}
 import org.apache.spark.sql.functions._
 
+import com.deepak.common.constants.DateFormats._
 import org.joda.time.format.DateTimeFormat
 
-/* Various Date Formats  */
-
-val YYYYMMDD = "yyyymmdd"
-val DDMMYYYY = "ddmmyyyy"
-val YYMMDD = "yymmdd"
-val DDMMYY = "ddmmyy"
-val MMYYYY = "mmyyyy"
-val YYYYMM = "yyyymm"
-val MMYY = "mmyy"
-val YYMM = "yymm"
-val YYYY_MM_DD = "yyyy_mm_dd"
-val DD_MM_YYYY = "dd_mm_yy"
-
-
 /* General Date Transformation  */
-object DateTransforamtion {
+object SimpleDateTransforamtion {
 
 /* Simple Date Class */
 case class Date(year: String, month: String, day: String)
@@ -240,7 +229,7 @@ def currentTimeZone (timestampFormat: String ) : Column = {
                            .otherwise(yyyy)
     
       when(updatedYear < 1960 || (mm < 0 || mm >= 13 ), lit( "0" ) ).otherwise( {
-       val max_day = DateTransforamtion.getLastDayOfMonth( concat ( updatedYear, mm, lit( "01" ) ) )
+       val max_day = SimpleDateTransforamtion.getLastDayOfMonth( concat ( updatedYear, mm, lit( "01" ) ) )
         when ( dd < max_day, concat (updatedYear, mm, dd) ) .otherwise( concat ( updatedYear, mm, max_day ) )
       })  
   }
