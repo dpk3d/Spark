@@ -141,8 +141,85 @@
 						 .selectExpr(query: _*)
 						}
 	 
-	 
-	 
-  
+/*
+ * Methods to extracts a fixed length file
+ *@param spark				-> Spark Session object
+ *@param requiredColumns 	-> The Column mapping to be used to split the flat file into DataFrame
+							Structure: (FILTER_TYPE, (delimeter, delimitedRecordsFileCondition), fixedLengthFilterCondition, List(Pattern to Filter))
+ *@param return			----> DataFrame containing required fields
+ */
+ 
+ 
+ def fixedLengthParser (spark: SparkSession, df: DataFrame, requiredColumns: Map[String, (Int, Int)],
+						columnName: String = "_c0"): DataFrame = {
+						
+		requiredColumns.keys.foldLeft( df ) {
+		
+		(df, fieldMap) => {
+		df.withColumn(fieldMap, substring(col(columnName),
+								requiredColumns(fieldMap)._1 + 1,
+								requiredColumns(fieldMap)._2 - requiredColumns(fieldMap)._1 ))
+			}
+		}.drop(columnName)
+	}
+	
+	
+	
+def execurteQuery (sparkSession: SparkSession, columnsList: Seq[String], query: String, outputPath: String) {
+
+val regex = "\\$[0-9]".r
+	columnsList.foreach(c => {
+	println(regex.replaceAllIn(query, c))
+	writeData(sparkSession.sql(regex.replaceAllIn(query, c)),
+			outputPath + "//" + c,
+			List (),
+			headerExists = CSVOption.HEADER_TRUE,
+			delimeter = Delimiters.PIPE)
+	})
+}
+ /*
+ * Methods to read Avro File as DataFrame
+ *@param sparkSession		-> Spark Session object
+ *@param inputPath		 	-> Input File path
+ *@param return			----> DataFrame
+ */
+ 
+ def readAvroFileAsDataFrame(sparkSession: SparkSession, inputPath: String): DataFrame = {
+ import com.databricks.spark.avro._*
+ sparkSession.read.avro(inputPath)
+ }
+ 
+  /*
+ * Methods to read JSON File as DataFrame
+ *@param sparkSession		-> Spark Session object
+ *@param inputPath		 	-> Input File path
+ *@param return			----> DataFrame
+ */
+ 
+  def readJsonFileAsDataFrame(sparkSession: SparkSession, inputPath: String): DataFrame = {
+ sparkSession.read.json(inputPath)
+ }
+ 
+   /*
+ * Methods to read PARQUET File as DataFrame
+ *@param sparkSession		-> Spark Session object
+ *@param inputPath		 	-> Input File path
+ *@param return			----> DataFrame
+ */
+   def readParquetFileAsDataFrame(sparkSession: SparkSession, inputPath: String): DataFrame = {
+ sparkSession.read.parquet(inputPath)
+ }
+ 
+  /*
+ * Methods to read Avro File as DataFrame
+ *@param sparkSession		-> Spark Session object
+ *@param inputPath		 	-> Input File path
+ *@param return			----> DataFrame
+ */
+ 
+ def readAvroFileAsDataFrame(sparkSession: SparkSession, inputPath: String): DataFrame = {
+ import com.databricks.spark.avro._*
+ sparkSession.read.option(CSVOption.CHARSET, charset).avro(inputPath)
+ }
  }
  
