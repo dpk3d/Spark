@@ -66,8 +66,10 @@ org.apache.spark.sql.AnalysisException: Expression 'array_contains(skill#128, Sp
 */
 
 // Getting the Average and total salary department Wise
-val avgAndTotalSalary = empSalary.withColumn("salaries", collect_list('salary) over window1).withColumn("avg_salary", (avg('salary) over window1).cast("Int"))
-                  .withColumn("total_salary", sum('salary) over window1).select("deptName", "empNo", "empName", "salary", "salaries", "avg_salary", "total_salary")
+val avgAndTotalSalary = empSalary.withColumn("salaries", collect_list('salary) over window1)
+                                 .withColumn("avg_salary", (avg('salary) over window1).cast("Int"))
+                                 .withColumn("total_salary", sum('salary) over window1)
+                                 .select("deptName", "empNo", "empName", "salary", "salaries", "avg_salary", "total_salary")
 avgAndTotalSalary.show(false)
 
 /**** Output *****
@@ -89,8 +91,12 @@ avgAndTotalSalary.show(false)
 */
 
 // Creating a window on partition with Department Name and ordered by salary (Ordered Frame)
-val avgAndTotalSalaryWithOrderBy = empSalary.withColumn("salaries", collect_list('salary) over window2).withColumn("avg_salary", (avg('salary) over window2).cast("Int"))
-                                            .withColumn("total_salary", sum('salary) over window2).select("deptName", "empNo", "empName", "salary", "salaries", "avg_salary", "total_salary")
+val window2 = Window.partitionBy("deptName").orderBy('salary desc)
+  
+val avgAndTotalSalaryWithOrderBy = empSalary.withColumn("salaries", collect_list('salary) over window2)
+                                            .withColumn("avg_salary", (avg('salary) over window2).cast("Int"))
+                                            .withColumn("total_salary", sum('salary) over window2)
+                                            .select("deptName", "empNo", "empName", "salary", "salaries", "avg_salary", "total_salary")
 
 avgAndTotalSalaryWithOrderBy.show(false)
 
@@ -113,8 +119,12 @@ avgAndTotalSalaryWithOrderBy.show(false)
 */
 
 // Applying Various Ranking Functions
-val rankFunctions = empSalary.withColumn("salaries", collect_list('salary) over window2).withColumn("Rank", rank() over window2).withColumn("DenseRank", dense_rank() over window2)
-                             .withColumn("RowNumber", row_number() over window2).withColumn("Ntile", ntile(3) over window2).withColumn("PercentageRank", percent_rank() over window2)
+val rankFunctions = empSalary.withColumn("salaries", collect_list('salary) over window2)
+                             .withColumn("Rank", rank() over window2)
+                             .withColumn("DenseRank", dense_rank() over window2)
+                             .withColumn("RowNumber", row_number() over window2)
+                             .withColumn("Ntile", ntile(3) over window2)
+                             .withColumn("PercentageRank", percent_rank() over window2)
                              .select("deptName", "empNo", "empName", "salary", "Rank", "DenseRank", "RowNumber", "Ntile", "PercentageRank")
 rankFunctions.show(false)
 
@@ -138,7 +148,9 @@ rankFunctions.show(false)
 
 // Getting the Top 3 salary department wise
 
-val top3Salary = empSalary.withColumn("RowNumber", row_number() over window2).filter('RowNumber <=3).select("deptName", "empNo", "empName", "salary")
+val top3Salary = empSalary.withColumn("RowNumber", row_number() over window2)
+                          .filter('RowNumber <=3)
+                          .select("deptName", "empNo", "empName", "salary")
 
 top3Salary.show(false)
 
@@ -159,7 +171,9 @@ top3Salary.show(false)
 */
 
 // Applying Lead and Lag
-val leadAndLag = empSalary.withColumn("lead", lead('salary, 1).over (window2)).withColumn("lag", lag('salary, 1).over (window2)).select("deptName", "empNo", "empName", "salary", "lead", "lag")
+val leadAndLag = empSalary.withColumn("lead", lead('salary, 1).over (window2))
+                          .withColumn("lag", lag('salary, 1).over (window2))
+                          .select("deptName", "empNo", "empName", "salary", "lead", "lag")
 
 leadAndLag.show(false)
 
@@ -182,7 +196,8 @@ leadAndLag.show(false)
 */
 
 // Getting the Difference
-val leadAndLagDiff = leadAndLag.withColumn("higher_than_next" , 'salary - 'lead).withColumn("lower_than_previous", 'lag - 'salary)
+val leadAndLagDiff = leadAndLag.withColumn("higher_than_next" , 'salary - 'lead)
+                               .withColumn("lower_than_previous", 'lag - 'salary)
 
 leadAndLagDiff.show(false)
 
@@ -205,7 +220,8 @@ leadAndLagDiff.show(false)
 */
 
 // Removing the null values and filling it with "0"
-val removingNull = leadAndLag.withColumn("higher_than_next", when('lead.isNull, 0).otherwise('salary - 'lead)).withColumn("lower_than_previous", when('lag.isNull, 0).otherwise('lag - 'salary)) 
+val removingNull = leadAndLag.withColumn("higher_than_next", when('lead.isNull, 0).otherwise('salary - 'lead))
+                             .withColumn("lower_than_previous", when('lag.isNull, 0).otherwise('lag - 'salary)) 
 
 removingNull.show(false)
 
@@ -228,7 +244,9 @@ removingNull.show(false)
 */
 
 // Getting Running Total (Adding everything upto currentRow)
-val runningTotal = empSalary.withColumn("Rank", rank().over (window2)).withColumn("Cost", sum('salary).over(window2)).select("deptName", "empNo", "empName", "salary", "Rank", "Cost")
+val runningTotal = empSalary.withColumn("Rank", rank().over (window2))
+                            .withColumn("Cost", sum('salary).over(window2))
+                            .select("deptName", "empNo", "empName", "salary", "Rank", "Cost")
 
 runningTotal.show(false)
 
@@ -253,7 +271,9 @@ runningTotal.show(false)
 // Creating a window on ROW
 val rowWindow = Window.partitionBy("deptName").orderBy("RowNumber")
 
-val runningTotal2 = empSalary.withColumn("RowNumber", row_number over window2).withColumn("Cost", sum('salary) over rowWindow).select("deptName", "empNo", "empName", "salary", "RowNumber", "Cost")
+val runningTotal2 = empSalary.withColumn("RowNumber", row_number over window2)
+                             .withColumn("Cost", sum('salary) over rowWindow)
+                             .select("deptName", "empNo", "empName", "salary", "RowNumber", "Cost")
 
 runningTotal2.show(false)
 
@@ -281,7 +301,9 @@ runningTotal2.show(false)
 //creating a window without ordered
 val window3 = Window.partitionBy("deptName").rowsBetween(Window.currentRow, 1)
 
-val rangeFrame = empSalary.withColumn("salaries", collect_list('salary) over window3).withColumn("total_salary", sum('salary) over window3).select("deptName", "empNo", "empName", "salary", "salaries", "total_salary")
+val rangeFrame = empSalary.withColumn("salaries", collect_list('salary) over window3)
+                          .withColumn("total_salary", sum('salary) over window3)
+                          .select("deptName", "empNo", "empName", "salary", "salaries", "total_salary")
 
 rangeFrame.show(false)
 
@@ -306,7 +328,9 @@ rangeFrame.show(false)
 // Creating a window with ordered
 val window4 = Window.partitionBy("deptName").orderBy('salary desc).rowsBetween(Window.currentRow, 1)
 
-val rangeFrameWithOrderBy = empSalary.withColumn("salaries", collect_list('salary) over window4).withColumn("total_salary", sum('salary) over window4).select("deptName", "empNo", "empName", "salary", "salaries", "total_salary")
+val rangeFrameWithOrderBy = empSalary.withColumn("salaries", collect_list('salary) over window4)
+                                     .withColumn("total_salary", sum('salary) over window4)
+                                     .select("deptName", "empNo", "empName", "salary", "salaries", "total_salary")
 
 rangeFrameWithOrderBy.show(false)
 
@@ -332,7 +356,9 @@ rangeFrameWithOrderBy.show(false)
 val window5 = Window.partitionBy("deptName").orderBy("salary").rowsBetween(Window.unboundedPreceding, Window.unboundedFollowing)
 
 // Getting Median 
-val medianSalaries = empSalary.withColumn("salaries", collect_list('salary) over window5).withColumn("median_salaries", element_at('salaries, (size('salaries)/2 + 1).cast("Int"))).select("deptName", "empNo", "empName", "salary", "salaries", "median_salaries")
+val medianSalaries = empSalary.withColumn("salaries", collect_list('salary) over window5)
+                              .withColumn("median_salaries", element_at('salaries, (size('salaries)/2 + 1).cast("Int")))
+                              .select("deptName", "empNo", "empName", "salary", "salaries", "median_salaries")
 
 medianSalaries.show(false)
 
@@ -354,9 +380,10 @@ medianSalaries.show(false)
 *
 */
 
-// Another way to get the Median of Salary
+// Another way to get the Median of Salary ---> Get the median and join 
 
-val median = empSalary.groupBy("deptName").agg(sort_array(collect_list('salary)).as("salaries")).select('deptName, 'salaries, element_at('salaries, (size('salaries)/2 +1 ).cast("int")).as("median_salary"))
+val median = empSalary.groupBy("deptName").agg(sort_array(collect_list('salary)).as("salaries"))
+                      .select('deptName, 'salaries, element_at('salaries, (size('salaries)/2 +1 ).cast("int")).as("median_salary"))
 median.show(false)
 
 /**** Output *****
@@ -370,7 +397,8 @@ median.show(false)
 *
 */
 
-val joinedMedianSalary = empSalary.join(broadcast(median), "deptName").select("deptName", "empNo", "empName", "salary", "salaries", "median_salary")
+val joinedMedianSalary = empSalary.join(broadcast(median), "deptName")
+                                  .select("deptName", "empNo", "empName", "salary", "salaries", "median_salary")
 
 joinedMedianSalary.show(false)
 
@@ -391,7 +419,6 @@ joinedMedianSalary.show(false)
 +--------+-----+----------+------+-----------------------------------+-------------+
 *
 */
-
 
 }
 }
