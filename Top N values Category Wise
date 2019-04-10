@@ -1,0 +1,53 @@
+import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.expressions.Window
+
+case class Employee (deptId: Int, empName: String, Salary: Long)
+
+import spark.implicits._
+
+val empDetail = Seq(
+  Employee(0,"Deepak",30900), Employee(0,"Abhishek",22100), Employee(0,"Manav",19600), Employee(0,"Preetam",13000),
+  Employee(1,"Veeru",28500), Employee(1,"Vishwa",26800), Employee(1,"Vikas",126000), Employee(1,"Vibhav",53000),
+  Employee(2,"Suhani",39600), Employee(2,"Smiley",29700), Employee(2,"Moni",27900), Employee(2,"Simran",98000),
+  Employee(3,"Bani",35600)).toDF
+
+empDetail.show(false)
+/***** Output Of empDetail DataFrame
++------+--------+------+
+|deptId|empName |Salary|
++------+--------+------+
+|0     |Deepak  |30900 |
+|0     |Abhishek|22100 |
+|0     |Manav   |19600 |
+|0     |Preetam |13000 |
+|1     |Veeru   |28500 |
+|1     |Vishwa  |26800 |
+|1     |Vikas   |126000|
+|1     |Vibhav  |53000 |
+|2     |Suhani  |39600 |
+|2     |Smiley  |29700 |
+|2     |Moni    |27900 |
+|2     |Simran  |98000 |
+|3     |Bani    |35600 |
++------+--------+------+
+*
+*/
+
+ // val n: Int = ??? 
+val window = Window.partitionBy("deptId").orderBy($"Salary".desc)
+
+val empTopDF = empDetail.withColumn("RowNumber", row_number() over window).where($"RowNumber" === 1).drop("RowNumber")
+
+// empTopDF.show(false)
+/***** Output Of empTopDF DataFrame
++------+-------+------+
+|deptId|empName|Salary|
++------+-------+------+
+|1     |Vikas  |126000|
+|3     |Bani   |35600 |
+|2     |Simran |98000 |
+|0     |Deepak |30900 |
++------+-------+------+
+*
+*/
