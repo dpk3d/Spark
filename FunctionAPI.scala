@@ -3,7 +3,10 @@ Lanch Spark2 Shell and execute below
 */
 import org.apache.spark.sql.functions._
 
-val initialDF = Seq(("Deepak", "p1"), ("Deepak", "p1"), ("Deepak", "p4"), ("Deepak", "p2"), ("Deepak", "p3"), ("Deepak", "p3"), ("Veeru", "p1"), ("Veeru", "p3"), ("Veeru", "p3"), ("Veeru", "p2"), ("Veeru", "p2"), ("Veeru", "p2")).toDF("Name", "Id")
+val initialDF = Seq(("Deepak", "p1"), ("Deepak", "p1"), ("Deepak", "p4"), ("Deepak", "p2"),
+                    ("Deepak", "p3"), ("Deepak", "p3"), ("Veeru", "p1"), ("Veeru", "p3"),
+                    ("Veeru", "p3"), ("Veeru", "p2"), ("Veeru", "p2"), ("Veeru", "p2"))
+                .toDF("Name", "Id")
 // initialDF: org.apache.spark.sql.DataFrame = [Name: string, Id: string]
 
  val countDf = initialDF.groupBy('Name, 'Id).count.show()
@@ -81,8 +84,8 @@ val inputDF = (Seq((0, "Deepak", "Singh", "Google", "Newyork"),
               (2, "Smiley", null, "Amazon", "Texas"),
               (3, "Prakriti", "Jain", null, "LA"),
               (4, "Manav", "Singhal", "HPE", "California")))
-              .toDF("id", "fName", "lName", "company", "location") // inputDF: org.apache.spark.sql.DataFrame = [id: int, fName: string ... 3 more fields]
-
+              .toDF("id", "fName", "lName", "company", "location") 
+// inputDF: org.apache.spark.sql.DataFrame = [id: int, fName: string ... 3 more fields]
 
 
 inputDF.first // org.apache.spark.sql.Row = [0,Deepak,Singh,Google,Newyork]
@@ -139,7 +142,18 @@ val manupulatingNullDF = inputDF.withColumn("lastName", when($"lName".isNull, "L
 |  4|   Manav|   null|    null|       0|
 +---+--------+-------+--------+--------+
 */
-
-val manupulatingNullDF = inputDF.withColumn("lastName", when($"lName".isNull, "Love").otherwise(col("lname"))).drop("lName")
-           .withColumn("Company", when($"company".isNull, "ABC").otherwise(col("company"))).drop("company")
-                                .withColumn("Location", when($"location".isNull, "XYZ").otherwise(col("location"))).drop("location").show()
+val manupulatingNullDF = inputDF.withColumn("lastName", when($"lName".isNull,"Love").otherwise(col("lname")))
+                                .withColumn("Company",when($"company".isNull, "ABC").otherwise(col("company")))
+                                .withColumn("Location",when($"location".isNull, "XYZ").otherwise(col("location")))
+                                .drop("lName").show
+/*
++---+--------+-------+----------+--------+
+| id|   fName|Company|  Location|lastName|
++---+--------+-------+----------+--------+
+|  0|  Deepak| Google|   Newyork|   Singh|
+|  1|   Veeru| Swiggy|       XYZ|   Royal|
+|  2|  Smiley| Amazon|     Texas|    Love|
+|  3|Prakriti|    ABC|        LA|    Jain|
+|  4|   Manav|    HPE|California| Singhal|
++---+--------+-------+----------+--------+
+*/
