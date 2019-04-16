@@ -1,7 +1,10 @@
 
 import org.apache.spark.sql.functions._
+
+// Creating a dataFrame with Current date and current timestamp
 val dateDF = spark.range(10).withColumn("today", current_date()).withColumn("now", current_timestamp())
-//dateDF.printSchema()
+
+dateDF.printSchema()
 /*
 root
  |-- id: long (nullable = false)
@@ -22,6 +25,7 @@ dateDF.take(8).foreach(println)
 */
 
 dateDF.createOrReplaceTempView("dateTable")
+
 dateDF.select(date_sub(col("today"), 5),date_add(col("today"), 5)).show(3)
 /*
 +------------------+------------------+
@@ -44,7 +48,8 @@ dateDF.withColumn("week_ago", date_sub(col("today"), 7)).select(datediff(col("we
 +-------------------------+
 */
 
-dateDF.select(to_date(lit("2019-01-01")).alias("start"),to_date(lit("2019-03-22")).alias("end")).select(months_between(col("start"), col("end"))).show(4)
+dateDF.select(to_date(lit("2019-01-01")).alias("start"),to_date(lit("2019-03-22")).alias("end"))
+      .select(months_between(col("start"), col("end"))).show(4)
 /*
 +--------------------------+
 |months_between(start, end)|
@@ -55,6 +60,7 @@ dateDF.select(to_date(lit("2019-01-01")).alias("start"),to_date(lit("2019-03-22"
 |               -2.67741935|
 +--------------------------+
 */
+
 spark.range(5).withColumn("date", lit("2018-01-01")).select(to_date(col("date"))).show(3)
 /*
 +---------------+
