@@ -74,3 +74,72 @@ val collectListUsingUdfAndZip = foodPrice.groupBy('name).agg(collect_list('food)
 |Vibhav|[[apple, 0.99], [mango, 2.59]]  |
 +------+--------------------------------+
 */
+
+
+val inputDF = (Seq((0, "Deepak", "Singh", "Google", "Newyork"),
+              (1, "Veeru", "Royal", "Swiggy", null),
+              (2, "Smiley", null, "Amazon", "Texas"),
+              (3, "Prakriti", "Jain", null, "LA"),
+              (4, "Manav", "Singhal", "HPE", "California")))
+              .toDF("id", "fName", "lName", "company", "location") // inputDF: org.apache.spark.sql.DataFrame = [id: int, fName: string ... 3 more fields]
+
+
+
+inputDF.first // org.apache.spark.sql.Row = [0,Deepak,Singh,Google,Newyork]
+inputDF.show
+/*
++---+--------+-------+-------+----------+
+| id|   fName|  lName|company|  location|
++---+--------+-------+-------+----------+
+|  0|  Deepak|  Singh| Google|   Newyork|
+|  1|   Veeru|  Royal| Swiggy|      null|
+|  2|  Smiley|   null| Amazon|     Texas|
+|  3|Prakriti|   Jain|   null|        LA|
+|  4|   Manav|Singhal|    HPE|California|
++---+--------+-------+-------+----------+
+*/
+
+inputDF.filter(col("lName").isNotNull && col("company").isNotNull).show()
+/*
++---+------+-------+-------+----------+
+| id| fName|  lName|company|  location|
++---+------+-------+-------+----------+
+|  0|Deepak|  Singh| Google|   Newyork|
+|  1| Veeru|  Royal| Swiggy|      null|
+|  4| Manav|Singhal|    HPE|California|
++---+------+-------+-------+----------+
+*/
+
+val filterCond = inputDF.columns.map(x=>col(x).isNotNull).reduce(_ && _)
+// filterCond: org.apache.spark.sql.Column = (((((id IS NOT NULL) AND (fName IS NOT NULL)) AND (lName IS NOT NULL)) AND (company IS NOT NULL)) AND (location IS NOT NULL))
+
+val filterDF = inputDF.filter(filterCond).show()
+/*
++---+------+-------+-------+----------+
+| id| fName|  lName|company|  location|
++---+------+-------+-------+----------+
+|  0|Deepak|  Singh| Google|   Newyork|
+|  4| Manav|Singhal|    HPE|California|
++---+------+-------+-------+----------+
+*/
+
+// Now Manupulating the null value
+
+val manupulatingNullDF = inputDF.withColumn("lastName", when($"lName".isNull, "Love").otherwise("0")).drop($"lName")
+                              .withColumn("Company", when($"company".isNull, "ABC")).drop($"company")
+                               .withColumn("Location", when($"location".isNull, "XYZ")).drop($"location").show
+/*
++---+--------+-------+--------+--------+
+| id|   fName|Company|Location|lastName|
++---+--------+-------+--------+--------+
+|  0|  Deepak|   null|    null|       0|
+|  1|   Veeru|   null|     XYZ|       0|
+|  2|  Smiley|   null|    null|    Love|
+|  3|Prakriti|    ABC|    null|       0|
+|  4|   Manav|   null|    null|       0|
++---+--------+-------+--------+--------+
+*/
+
+val manupulatingNullDF = inputDF.withColumn("lastName", when($"lName".isNull, "Love").otherwise(col("lname"))).drop("lName")
+           .withColumn("Company", when($"company".isNull, "ABC").otherwise(col("company"))).drop("company")
+                                .withColumn("Location", when($"location".isNull, "XYZ").otherwise(col("location"))).drop("location").show()
