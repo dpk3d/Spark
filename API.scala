@@ -276,7 +276,7 @@ postsDfNew.groupBy('ownerUserId).agg(max('lastActivityDate), max('score)).show(1
 |        198| 2013-12-18 15:57:...|         5|
 +-----------+---------------------+----------+
 */
-//postsDfNew.groupBy('ownerUserId).agg(Map("lastActivityDate" -> "max", "score" -> "max")).show(10)
+postsDfNew.groupBy('ownerUserId).agg(Map("lastActivityDate" -> "max", "score" -> "max")).show(10)
 /*
 +-----------+---------------------+----------+
 |ownerUserId|max(lastActivityDate)|max(score)|
@@ -293,7 +293,7 @@ postsDfNew.groupBy('ownerUserId).agg(max('lastActivityDate), max('score)).show(1
 |        198| 2013-12-18 15:57:...|         5|
 +-----------+---------------------+----------+
 */
-//postsDfNew.groupBy('ownerUserId).agg(max('lastActivityDate), max('score).gt(5)).show(10)
+postsDfNew.groupBy('ownerUserId).agg(max('lastActivityDate), max('score).gt(5)).show(10)
 /*
 +-----------+---------------------+----------------+
 |ownerUserId|max(lastActivityDate)|(max(score) > 5)|
