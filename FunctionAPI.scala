@@ -157,3 +157,197 @@ val manupulatingNullDF = inputDF.withColumn("lastName", when($"lName".isNull,"Lo
 |  4|   Manav|    HPE|California| Singhal|
 +---+--------+-------+----------+--------+
 */
+
+import org.apache.spark.sql.functions._
+
+val prime = Seq(
+               ("Bangalore", 2019, 82000),
+               ("Mumbai", 2018, 72000),
+               ("Mumbai", 2015, 48000),
+               ("Pune", 2017, 60000),
+               ("Delhi", 2015, 54000),
+               ("Delhi", 2016, 50000),
+               ("Chennai", 2015, 40000),
+               ("Bangalore", 2018, 80000)
+).toDF("City", "Year", "Price")
+
+prime.show
+/*
++---------+----+-----+
+|     City|Year|Price|
++---------+----+-----+
+|Bangalore|2019|82000|
+|   Mumbai|2018|72000|
+|   Mumbai|2015|48000|
+|     Pune|2017|60000|
+|    Delhi|2015|54000|
+|    Delhi|2016|50000|
+|  Chennai|2015|40000|
+|Bangalore|2018|80000|
++---------+----+-----+
+*/
+
+val groupByCityAndYear = prime.groupBy("City").agg(sum("Price") as "Amount").show
+/*
++---------+------+
+|     City|Amount|
++---------+------+
+|Bangalore|162000|
+|  Chennai| 40000|
+|   Mumbai|120000|
+|     Pune| 60000|
+|    Delhi|104000|
++---------+------+
+*/
+
+val nullCity = Seq((null , 2018, 876570),(null.asInstanceOf[String], 2019, 82200)).toDF("City", "Year", "Price")
+
+val allPrime = prime union nullCity
+
+allPrime.show()
+/*
++---------+----+------+
+|     City|Year| Price|
++---------+----+------+
+|Bangalore|2019| 82000|
+|   Mumbai|2018| 72000|
+|   Mumbai|2015| 48000|
+|     Pune|2017| 60000|
+|    Delhi|2015| 54000|
+|    Delhi|2016| 50000|
+|  Chennai|2015| 40000|
+|Bangalore|2018| 80000|
+|     null|2018|876570|
+|     null|2019| 82200|
++---------+----+------+
+*/
+val cube = allPrime
+  .cube("City", "Year")
+  .agg(grouping("City"), grouping("Year")) // <-- grouping here
+cube.show()
+/*
++---------+----+--------------+--------------+
+|     City|Year|grouping(City)|grouping(Year)|
++---------+----+--------------+--------------+
+|   Mumbai|null|             0|             1|
+|   Mumbai|2018|             0|             0|
+|     null|2015|             1|             0|
+|    Delhi|2016|             0|             0|
+|     Pune|2017|             0|             0|
+|  Chennai|2015|             0|             0|
+|     null|null|             0|             1|
+|    Delhi|2015|             0|             0|
+|     null|null|             1|             1|
+|    Delhi|null|             0|             1|
+|     null|2018|             0|             0|
+|     null|2016|             1|             0|
+|     null|2019|             1|             0|
+|     null|2019|             0|             0|
+|   Mumbai|2015|             0|             0|
+|  Chennai|null|             0|             1|
+|Bangalore|2019|             0|             0|
+|     null|2017|             1|             0|
+|     null|2018|             1|             0|
+|Bangalore|2018|             0|             0|
++---------+----+--------------+--------------+
+*/
+
+val cubeArrangingNull = allPrime
+  .cube("City", "Year")
+  .agg(grouping("City"), grouping("Year")) // <-- grouping here
+  .sort($"City".desc_nulls_last, $"Year".desc_nulls_last)
+cubeArrangingNull.show()
+/*
++---------+----+--------------+--------------+
+|     City|Year|grouping(City)|grouping(Year)|
++---------+----+--------------+--------------+
+|     Pune|2017|             0|             0|
+|     Pune|null|             0|             1|
+|   Mumbai|2018|             0|             0|
+|   Mumbai|2015|             0|             0|
+|   Mumbai|null|             0|             1|
+|    Delhi|2016|             0|             0|
+|    Delhi|2015|             0|             0|
+|    Delhi|null|             0|             1|
+|  Chennai|2015|             0|             0|
+|  Chennai|null|             0|             1|
+|Bangalore|2019|             0|             0|
+|Bangalore|2018|             0|             0|
+|Bangalore|null|             0|             1|
+|     null|2019|             0|             0|
+|     null|2019|             1|             0|
+|     null|2018|             0|             0|
+|     null|2018|             1|             0|
+|     null|2017|             1|             0|
+|     null|2016|             1|             0|
+|     null|2015|             1|             0|
++---------+----+--------------+--------------+
+*/
+
+val cube2 = allPrime.cube("City", "Year").agg(grouping("City"))
+println(cube.queryExecution)
+
+/*
+== Parsed Logical Plan ==
+'Sort ['City DESC NULLS LAST, 'Year DESC NULLS LAST], true
++- Aggregate [City#125, Year#126, spark_grouping_id#122], [City#125, Year#126, cast((shiftright(spark_grouping_id#122, 1) & 1) as tinyint) AS grouping(City)#120, cast((shiftright(spark_grouping_id#122, 0) & 1) as tinyint) AS grouping(Year)#121]
+   +- Expand [List(City#91, Year#92, Price#93, City#123, Year#124, 0), List(City#91, Year#92, Price#93, City#123, null, 1), List(City#91, Year#92, Price#93, null, Year#124, 2), List(City#91, Year#92, Price#93, null, null, 3)], [City#91, Year#92, Price#93, City#125, Year#126, spark_grouping_id#122]
+      +- Project [City#91, Year#92, Price#93, City#91 AS City#123, Year#92 AS Year#124]
+         +- Union
+            :- Project [_1#87 AS City#91, _2#88 AS Year#92, _3#89 AS Price#93]
+            :  +- LocalRelation [_1#87, _2#88, _3#89]
+            +- Project [_1#101 AS City#105, _2#102 AS Year#106, _3#103 AS Price#107]
+               +- LocalRelation [_1#101, _2#102, _3#103]
+
+== Analyzed Logical Plan ==
+City: string, Year: int, grouping(City): tinyint, grouping(Year): tinyint
+Sort [City#125 DESC NULLS LAST, Year#126 DESC NULLS LAST], true
++- Aggregate [City#125, Year#126, spark_grouping_id#122], [City#125, Year#126, cast((shiftright(spark_grouping_id#122, 1) & 1) as tinyint) AS grouping(City)#120, cast((shiftright(spark_grouping_id#122, 0) & 1) as tinyint) AS grouping(Year)#121]
+   +- Expand [List(City#91, Year#92, Price#93, City#123, Year#124, 0), List(City#91, Year#92, Price#93, City#123, null, 1), List(City#91, Year#92, Price#93, null, Year#124, 2), List(City#91, Year#92, Price#93, null, null, 3)], [City#91, Year#92, Price#93, City#125, Year#126, spark_grouping_id#122]
+      +- Project [City#91, Year#92, Price#93, City#91 AS City#123, Year#92 AS Year#124]
+         +- Union
+            :- Project [_1#87 AS City#91, _2#88 AS Year#92, _3#89 AS Price#93]
+            :  +- LocalRelation [_1#87, _2#88, _3#89]
+            +- Project [_1#101 AS City#105, _2#102 AS Year#106, _3#103 AS Price#107]
+               +- LocalRelation [_1#101, _2#102, _3#103]
+
+== Optimized Logical Plan ==
+Sort [City#125 DESC NULLS LAST, Year#126 DESC NULLS LAST], true
++- Aggregate [City#125, Year#126, spark_grouping_id#122], [City#125, Year#126, cast((shiftright(spark_grouping_id#122, 1) & 1) as tinyint) AS grouping(City)#120, cast((shiftright(spark_grouping_id#122, 0) & 1) as tinyint) AS grouping(Year)#121]
+   +- Expand [List(City#123, Year#124, 0), List(City#123, null, 1), List(null, Year#124, 2), List(null, null, 3)], [City#125, Year#126, spark_grouping_id#122]
+      +- Union
+         :- LocalRelation [City#123, Year#124]
+         +- LocalRelation [City#208, Year#209]
+
+== Physical Plan ==
+*Sort [City#125 DESC NULLS LAST, Year#126 DESC NULLS LAST], true, 0
++- Exchange rangepartitioning(City#125 DESC NULLS LAST, Year#126 DESC NULLS LAST, 200)
+   +- *HashAggregate(keys=[City#125, Year#126, spark_grouping_id#122], functions=[], output=[City#125, Year#126, grouping(City)#120, grouping(Year)#121])
+      +- Exchange hashpartitioning(City#125, Year#126, spark_grouping_id#122, 200)
+         +- *HashAggregate(keys=[City#125, Year#126, spark_grouping_id#122], functions=[], output=[City#125, Year#126, spark_grouping_id#122])
+            +- *Expand [List(City#123, Year#124, 0), List(City#123, null, 1), List(null, Year#124, 2), List(null, null, 3)], [City#125, Year#126, spark_grouping_id#122]
+               +- Union
+                  :- LocalTableScan [City#123, Year#124]
+                  +- LocalTableScan [City#208, Year#209]
+*/
+
+val cubeWithCity = allPrime
+  .cube("City")
+  .agg(grouping("City")) // <-- grouping here
+  .sort($"City".desc_nulls_last)
+cubeWithCity.show()
+/*
++---------+--------------+
+|     City|grouping(City)|
++---------+--------------+
+|     Pune|             0|
+|   Mumbai|             0|
+|    Delhi|             0|
+|  Chennai|             0|
+|Bangalore|             0|
+|     null|             1|
+|     null|             0|
++---------+--------------+
+*/
+
+
