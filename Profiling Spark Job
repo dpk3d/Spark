@@ -1,0 +1,8 @@
+Use jvisualvm.
+This utility shows stats like memory used, heap data, garbage collector, and CPU profiling.
+
+Some other useful utilities are:-
+jstack
+jmap
+jstats
+jconsole
