@@ -1,4 +1,4 @@
-package com.singh.deepak.kakfa
+package com.singh.deepak.spark.read
 
 import org.apache.spark.sql.SparkSession
 
